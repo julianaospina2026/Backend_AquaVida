@@ -1,23 +1,25 @@
 package com.example.proyecto_acueducto.Service;
 
-import com.example.proyecto_acueducto.Model.Factura;
-import com.example.proyecto_acueducto.Model.Lectura;
-import com.example.proyecto_acueducto.Model.CuotaFinanciacion;
-import com.example.proyecto_acueducto.Repository.FacturaRepository;
-import com.example.proyecto_acueducto.Repository.LecturaRepository;
-import com.example.proyecto_acueducto.Repository.CuotaFinanciacionRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.data.domain.Pageable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import java.util.Objects;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.example.proyecto_acueducto.Model.CuotaFinanciacion;
+import com.example.proyecto_acueducto.Model.Factura;
+import com.example.proyecto_acueducto.Model.Lectura;
+import com.example.proyecto_acueducto.Repository.CuotaFinanciacionRepository;
+import com.example.proyecto_acueducto.Repository.FacturaRepository;
+import com.example.proyecto_acueducto.Repository.LecturaRepository;
 
 @Service
 public class FacturaService {

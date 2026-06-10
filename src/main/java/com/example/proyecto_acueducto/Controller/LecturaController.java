@@ -12,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/lecturas")
 @CrossOrigin(origins = "*")
@@ -21,6 +23,15 @@ public class LecturaController {
 
     public LecturaController(LecturaService lecturaService) {
         this.lecturaService = lecturaService;
+    }
+
+    // ==========================
+    // 🔥 OBTENER LECTURAS POR CLIENTE
+    // ==========================
+    @GetMapping("/usuario/{clienteId}")
+    public ResponseEntity<List<Lectura>> obtenerPorUsuario(@PathVariable Long clienteId) {
+        List<Lectura> lista = lecturaService.obtenerPorCliente(clienteId);
+        return ResponseEntity.ok(lista);
     }
 
     // ==========================

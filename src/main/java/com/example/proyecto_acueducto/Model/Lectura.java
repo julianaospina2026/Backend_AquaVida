@@ -4,98 +4,171 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "lecturas")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Lectura {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Relación con Cliente
-    @ManyToOne(fetch = FetchType.LAZY)
+    // 🔵 RELACIÓN CON CLIENTE
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "cliente_id", nullable = false)
+    @JsonIgnoreProperties({
+            "hibernateLazyInitializer",
+            "handler",
+            "lecturas"
+    })
     private Cliente cliente;
 
-    // 🔹 Periodo (Ej: 2026-04)
-    @Column(name = "periodo", nullable = false, length = 7)
+    // 🔵 PERIODO (Ej: 2026-04)
+    @Column(nullable = false, length = 7)
     private String periodo;
 
-    // 🔹 Fecha de lectura
+    // 🔵 FECHA DE LECTURA
     @Column(name = "fecha_lectura", nullable = false)
     private LocalDate fechaLectura;
 
-    // 🔹 Lectura anterior del medidor
-    @Column(name = "lectura_anterior", nullable = false, precision = 12, scale = 3)
+    // 🔵 LECTURA ANTERIOR
+    @Column(nullable = false, precision = 12, scale = 3)
     private BigDecimal lecturaAnterior;
 
-    // 🔹 Lectura actual
-    @Column(name = "lectura_actual", nullable = false, precision = 12, scale = 3)
+    // 🔵 LECTURA ACTUAL
+    @Column(nullable = false, precision = 12, scale = 3)
     private BigDecimal lecturaActual;
 
-    // 🔹 Consumo calculado
-    @Column(name = "consumo_m3", nullable = false, precision = 12, scale = 3)
+    // 🔵 CONSUMO EN M3
+    @Column(precision = 12, scale = 3)
     private BigDecimal consumoM3;
 
-    // 🔹 Observaciones
-    @Column(name = "observacion", length = 255)
+    // 🔵 OBSERVACIÓN
+    @Column(length = 255)
     private String observacion;
 
-    // 🔹 Fecha de creación automática
-    @Column(name = "created_at", nullable = false, updatable = false)
+    // 🔵 VALOR DE LA LECTURA
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal valor = BigDecimal.ZERO;
+
+    // 🔵 AUDITORÍA
+    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    // 🔹 Valor monetario con valor por defecto en la definición de la columna
-    @Column(name = "valor", nullable = false, precision = 12, scale = 2, columnDefinition = "decimal(12,2) default 0.00")
-    private BigDecimal valor;
+    // =========================
+    // MÉTODOS DE CICLO DE VIDA
+    // =========================
 
     @PrePersist
     protected void onCreate() {
+
         createdAt = LocalDateTime.now();
 
         if (fechaLectura == null) {
             fechaLectura = LocalDate.now();
         }
 
-        // Calcular consumo automáticamente
+        calcularConsumo();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        calcularConsumo();
+    }
+
+    // =========================
+    // CÁLCULO DE CONSUMO
+    // =========================
+
+    private void calcularConsumo() {
+
         if (lecturaActual != null && lecturaAnterior != null) {
             consumoM3 = lecturaActual.subtract(lecturaAnterior);
-        }
-
-        if (valor == null) {
-            valor = BigDecimal.ZERO;
+        } else {
+            consumoM3 = BigDecimal.ZERO;
         }
     }
 
+    // =========================
     // GETTERS Y SETTERS
+    // =========================
 
-    public Long getId() { return id; }
+    public Long getId() {
+        return id;
+    }
 
-    public Cliente getCliente() { return cliente; }
-    public void setCliente(Cliente cliente) { this.cliente = cliente; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public String getPeriodo() { return periodo; }
-    public void setPeriodo(String periodo) { this.periodo = periodo; }
+    public Cliente getCliente() {
+        return cliente;
+    }
 
-    public LocalDate getFechaLectura() { return fechaLectura; }
-    public void setFechaLectura(LocalDate fechaLectura) { this.fechaLectura = fechaLectura; }
+    public void setCliente(Cliente cliente) {
+        this.cliente = cliente;
+    }
 
-    public BigDecimal getLecturaAnterior() { return lecturaAnterior; }
-    public void setLecturaAnterior(BigDecimal lecturaAnterior) { this.lecturaAnterior = lecturaAnterior; }
+    public String getPeriodo() {
+        return periodo;
+    }
 
-    public BigDecimal getLecturaActual() { return lecturaActual; }
-    public void setLecturaActual(BigDecimal lecturaActual) { this.lecturaActual = lecturaActual; }
+    public void setPeriodo(String periodo) {
+        this.periodo = periodo;
+    }
 
-    public BigDecimal getConsumoM3() { return consumoM3; }
-    public void setConsumoM3(BigDecimal consumoM3) { this.consumoM3 = consumoM3; }
+    public LocalDate getFechaLectura() {
+        return fechaLectura;
+    }
 
-    public String getObservacion() { return observacion; }
-    public void setObservacion(String observacion) { this.observacion = observacion; }
+    public void setFechaLectura(LocalDate fechaLectura) {
+        this.fechaLectura = fechaLectura;
+    }
 
-    public BigDecimal getValor() { return valor; }
-    public void setValor(BigDecimal valor) { this.valor = valor; }
+    public BigDecimal getLecturaAnterior() {
+        return lecturaAnterior;
+    }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setLecturaAnterior(BigDecimal lecturaAnterior) {
+        this.lecturaAnterior = lecturaAnterior;
+    }
+
+    public BigDecimal getLecturaActual() {
+        return lecturaActual;
+    }
+
+    public void setLecturaActual(BigDecimal lecturaActual) {
+        this.lecturaActual = lecturaActual;
+    }
+
+    public BigDecimal getConsumoM3() {
+        return consumoM3;
+    }
+
+    public void setConsumoM3(BigDecimal consumoM3) {
+        this.consumoM3 = consumoM3;
+    }
+
+    public String getObservacion() {
+        return observacion;
+    }
+
+    public void setObservacion(String observacion) {
+        this.observacion = observacion;
+    }
+
+    public BigDecimal getValor() {
+        return valor;
+    }
+
+    public void setValor(BigDecimal valor) {
+        this.valor = valor;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
 }

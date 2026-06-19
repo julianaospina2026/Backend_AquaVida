@@ -1,12 +1,32 @@
 package com.example.proyecto_acueducto.Dto;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class LoginRequest {
-    @JsonAlias({"username"})
+
+    @JsonProperty("identificacion")
     private String identificacion;
+
+    @JsonProperty("password")
     private String password;
 
+    // ========================
+    // CONSTRUCTOR VACÍO (OBLIGATORIO)
+    // ========================
+    public LoginRequest() {
+    }
+
+    // ========================
+    // CONSTRUCTOR COMPLETO
+    // ========================
+    public LoginRequest(String identificacion, String password) {
+        this.identificacion = identificacion;
+        this.password = password;
+    }
+
+    // ========================
+    // GETTERS Y SETTERS
+    // ========================
     public String getIdentificacion() {
         return identificacion;
     }
@@ -21,5 +41,16 @@ public class LoginRequest {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    // ========================
+    // TO STRING (AYUDA EN DEBUG)
+    // ========================
+    @Override
+    public String toString() {
+        return "LoginRequest{" +
+                "identificacion='" + identificacion + '\'' +
+                ", password='[PROTECTED]'" +
+                '}';
     }
 }

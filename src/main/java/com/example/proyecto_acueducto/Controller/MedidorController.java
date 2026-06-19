@@ -8,7 +8,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/medidores")
-@CrossOrigin(origins = "*")
 public class MedidorController {
     private final MedidorService medidorService;
 

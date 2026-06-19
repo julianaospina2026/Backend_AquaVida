@@ -1,28 +1,35 @@
 package com.example.proyecto_acueducto.Controller;
 
 import com.example.proyecto_acueducto.Model.CuotaFinanciacion;
-import com.example.proyecto_acueducto.Service.CuotaFinanciacionService;
+import com.example.proyecto_acueducto.Repository.CuotaFinanciacionRepository;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/cuotas-financiacion")
-@CrossOrigin(origins = "*")
+@RequestMapping("/api/cuotas")
 public class CuotaFinanciacionController {
-    private final CuotaFinanciacionService cuotaFinanciacionService;
 
-    public CuotaFinanciacionController(CuotaFinanciacionService cuotaFinanciacionService) {
-        this.cuotaFinanciacionService = cuotaFinanciacionService;
+    private final CuotaFinanciacionRepository cuotaRepository;
+
+    public CuotaFinanciacionController(CuotaFinanciacionRepository cuotaRepository) {
+        this.cuotaRepository = cuotaRepository;
     }
 
-    @GetMapping("/financiacion/{financiacionId}")
-    public List<CuotaFinanciacion> listarPorFinanciacion(@PathVariable Long financiacionId) {
-        return cuotaFinanciacionService.listarPorFinanciacion(financiacionId);
+    // =====================================
+    // OBTENER CUOTAS POR FINANCIACIÓN
+    // =====================================
+    @GetMapping("/financiacion/{id}")
+    public List<CuotaFinanciacion> obtenerPorFinanciacion(@PathVariable Long id) {
+        return cuotaRepository.findByFinanciacionId(id);
     }
 
-    @PatchMapping("/{id}/pagar")
-    public CuotaFinanciacion marcarComoPagada(@PathVariable Long id) {
-        return cuotaFinanciacionService.pagarCuota(id);
+    // =====================================
+    // OBTENER CUOTAS POR ESTADO
+    // (PENDIENTE / PAGADA / ATRASADA)
+    // =====================================
+    @GetMapping("/estado/{estado}")
+    public List<CuotaFinanciacion> obtenerPorEstado(@PathVariable String estado) {
+        return cuotaRepository.findByEstado(estado);
     }
-    
 }

@@ -7,7 +7,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/historial-consumo")
-@CrossOrigin(origins = "*")
 public class HistorialConsumoController {
     private final HistorialConsumoService service;
 

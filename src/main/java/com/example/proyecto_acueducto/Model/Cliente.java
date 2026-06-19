@@ -1,8 +1,8 @@
 package com.example.proyecto_acueducto.Model;
 
-import java.util.List;
 import jakarta.persistence.*;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.List;
 
 @Entity
 @Table(name = "cliente")
@@ -12,21 +12,13 @@ public class Cliente {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 🔵 INFORMACIÓN BÁSICA
-    @Column(name = "codigo_cliente")
     private String codigoCliente;
-
-    @Column(name = "documento_identidad")
     private Long documentoIdentidad;
-
     private String nombre;
     private String apellido;
     private String direccion;
-
-    // 🔵 NUEVOS CAMPOS (IMPORTANTE)
     private String zona;
     private String vereda;
-
     private String telefono;
     private String correo;
     private String estado;
@@ -35,54 +27,121 @@ public class Cliente {
     @Column(name = "lectura_medidor")
     private Long lecturaMedidor;
 
-    // 🔵 RELACIÓN
     @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonIgnoreProperties({"cliente"})
+    @JsonIgnore
     private List<Lectura> lecturas;
 
-    // =========================
     // GETTERS Y SETTERS
-    // =========================
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public String getCodigoCliente() { return codigoCliente; }
-    public void setCodigoCliente(String codigoCliente) { this.codigoCliente = codigoCliente; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public Long getDocumentoIdentidad() { return documentoIdentidad; }
-    public void setDocumentoIdentidad(Long documentoIdentidad) { this.documentoIdentidad = documentoIdentidad; }
+    public String getCodigoCliente() {
+        return codigoCliente;
+    }
 
-    public String getNombre() { return nombre; }
-    public void setNombre(String nombre) { this.nombre = nombre; }
+    public void setCodigoCliente(String codigoCliente) {
+        this.codigoCliente = codigoCliente;
+    }
 
-    public String getApellido() { return apellido; }
-    public void setApellido(String apellido) { this.apellido = apellido; }
+    public Long getDocumentoIdentidad() {
+        return documentoIdentidad;
+    }
 
-    public String getDireccion() { return direccion; }
-    public void setDireccion(String direccion) { this.direccion = direccion; }
+    public void setDocumentoIdentidad(Long documentoIdentidad) {
+        this.documentoIdentidad = documentoIdentidad;
+    }
 
-    public String getZona() { return zona; }
-    public void setZona(String zona) { this.zona = zona; }
+    public String getNombre() {
+        return nombre;
+    }
 
-    public String getVereda() { return vereda; }
-    public void setVereda(String vereda) { this.vereda = vereda; }
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
 
-    public String getTelefono() { return telefono; }
-    public void setTelefono(String telefono) { this.telefono = telefono; }
+    public String getApellido() {
+        return apellido;
+    }
 
-    public String getCorreo() { return correo; }
-    public void setCorreo(String correo) { this.correo = correo; }
+    public void setApellido(String apellido) {
+        this.apellido = apellido;
+    }
 
-    public String getEstado() { return estado; }
-    public void setEstado(String estado) { this.estado = estado; }
+    public String getDireccion() {
+        return direccion;
+    }
 
-    public Integer getEstrato() { return estrato; }
-    public void setEstrato(Integer estrato) { this.estrato = estrato; }
+    public void setDireccion(String direccion) {
+        this.direccion = direccion;
+    }
 
-    public Long getLecturaMedidor() { return lecturaMedidor; }
-    public void setLecturaMedidor(Long lecturaMedidor) { this.lecturaMedidor = lecturaMedidor; }
+    public String getZona() {
+        return zona;
+    }
 
-    public List<Lectura> getLecturas() { return lecturas; }
-    public void setLecturas(List<Lectura> lecturas) { this.lecturas = lecturas; }
+    public void setZona(String zona) {
+        this.zona = zona;
+    }
+
+    public String getVereda() {
+        return vereda;
+    }
+
+    public void setVereda(String vereda) {
+        this.vereda = vereda;
+    }
+
+    public String getTelefono() {
+        return telefono;
+    }
+
+    public void setTelefono(String telefono) {
+        this.telefono = telefono;
+    }
+
+    public String getCorreo() {
+        return correo;
+    }
+
+    public void setCorreo(String correo) {
+        this.correo = correo;
+    }
+
+    public String getEstado() {
+        return estado;
+    }
+
+    public void setEstado(String estado) {
+        this.estado = estado;
+    }
+
+    public Integer getEstrato() {
+        return estrato;
+    }
+
+    public void setEstrato(Integer estrato) {
+        this.estrato = estrato;
+    }
+
+    public Long getLecturaMedidor() {
+        return lecturaMedidor;
+    }
+
+    public void setLecturaMedidor(Long lecturaMedidor) {
+        this.lecturaMedidor = lecturaMedidor;
+    }
+
+    public List<Lectura> getLecturas() {
+        return lecturas;
+    }
+
+    public void setLecturas(List<Lectura> lecturas) {
+        this.lecturas = lecturas;
+    }
 }

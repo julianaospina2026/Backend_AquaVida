@@ -4,7 +4,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -23,102 +22,239 @@ import com.example.proyecto_acueducto.Repository.LecturaRepository;
 
 @Service
 public class FacturaService {
-    private static final Logger log = LoggerFactory.getLogger(FacturaService.class);
-    
+
+    private static final Logger log =
+            LoggerFactory.getLogger(FacturaService.class);
+
     private final FacturaRepository facturaRepository;
     private final LecturaRepository lecturaRepository;
     private final CuotaFinanciacionRepository cuotaRepository;
 
-    // Valores por defecto para un acueducto veredal (podrían venir de una tabla de configuración)
     private static final BigDecimal VALOR_M3 = new BigDecimal("2500");
     private static final BigDecimal CARGO_FIJO = new BigDecimal("8000");
 
-    public FacturaService(FacturaRepository facturaRepository, 
-        LecturaRepository lecturaRepository,
-        CuotaFinanciacionRepository cuotaRepository) {
+    public FacturaService(
+            FacturaRepository facturaRepository,
+            LecturaRepository lecturaRepository,
+            CuotaFinanciacionRepository cuotaRepository
+    ) {
         this.facturaRepository = facturaRepository;
         this.lecturaRepository = lecturaRepository;
         this.cuotaRepository = cuotaRepository;
     }
 
+    // =========================
+    // CONSULTAS
+    // =========================
+
     public List<Factura> listarTodas() {
         return facturaRepository.findAll();
     }
 
-    public Optional<Factura> buscarPorId(Long id) {
-        return facturaRepository.findById(id);
+    public List<Factura> listarPorCliente(Long clienteId) {
+        return facturaRepository.findByClienteId(clienteId);
     }
 
-    public List<Factura> listarPorCliente(Long clienteId) {
-        return facturaRepository.findByLecturaClienteId(clienteId);
+    public List<Factura> listarPendientesPorCliente(Long clienteId) {
+        return facturaRepository.findPendientesPorCliente(clienteId);
     }
+
+    public Factura buscarPorId(Long id) {
+        return facturaRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("Factura no encontrada: " + id));
+    }
+
+    public Factura buscarPorLectura(Long lecturaId) {
+        return facturaRepository.findByLecturaId(lecturaId)
+                .orElse(null);
+    }
+
+    // =========================
+    // FACTURA INDIVIDUAL
+    // =========================
 
     @Transactional
-    public void generarFacturasMasivas(String periodo) {
-        // 1. Obtener todas las lecturas del periodo que no tengan factura
-        List<Lectura> lecturas = lecturaRepository.findByPeriodo(periodo, Pageable.unpaged()).getContent();
+    public Factura generarFacturaPorLectura(Long lecturaId) {
 
-        // OPTIMIZACIÓN: Cargar IDs de lecturas que ya tienen factura para evitar duplicados sin consultar en cada iteración
-        Set<Long> lecturaIdsConFactura = facturaRepository.findAll().stream()
-            .map(f -> f.getLectura() != null ? f.getLectura().getId() : null)
-            .filter(Objects::nonNull)
-            .collect(Collectors.toSet());
+        Lectura lectura = lecturaRepository.findById(lecturaId)
+                .orElseThrow(() ->
+                        new RuntimeException("Lectura no encontrada"));
 
-        // OPTIMIZACIÓN: Cargar cuotas pendientes una sola vez fuera del bucle
-        List<CuotaFinanciacion> cuotasPendientes = cuotaRepository.findByEstado("PENDIENTE");
+        Factura existente = facturaRepository
+                .findByLecturaId(lecturaId)
+                .orElse(null);
+
+        if (existente != null) {
+            return existente;
+        }
+
+        List<CuotaFinanciacion> cuotasPendientes =
+                cuotaRepository.findByEstado("PENDIENTE");
+
         if (cuotasPendientes == null) {
             cuotasPendientes = List.of();
         }
 
+        Factura factura = new Factura();
+
+        factura.setLectura(lectura);
+        factura.setFechaEmision(LocalDate.now());
+        factura.setFechaVencimiento(LocalDate.now().plusDays(15));
+        factura.setEstado("PENDIENTE");
+
+        factura.setCargoFijo(CARGO_FIJO);
+
+        BigDecimal consumo = lectura.getConsumoM3() != null
+                ? lectura.getConsumoM3()
+                : BigDecimal.ZERO;
+
+        BigDecimal valorConsumo = consumo.multiply(VALOR_M3);
+
+        factura.setValorConsumo(valorConsumo);
+
+        BigDecimal otrosCobros = BigDecimal.ZERO;
+
+        if (lectura.getCliente() != null) {
+
+            Long clienteId = lectura.getCliente().getId();
+
+            for (CuotaFinanciacion cuota : cuotasPendientes) {
+
+                if (cuota != null
+                        && cuota.getFinanciacion() != null
+                        && cuota.getFinanciacion().getCliente() != null
+                        && clienteId.equals(
+                        cuota.getFinanciacion().getCliente().getId())) {
+
+                    if (cuota.getValor() != null) {
+                        otrosCobros = otrosCobros.add(cuota.getValor());
+                    }
+                }
+            }
+        }
+
+        factura.setOtrosCobros(otrosCobros);
+
+        factura.setTotalPagar(
+                valorConsumo
+                        .add(CARGO_FIJO)
+                        .add(otrosCobros)
+        );
+
+        Factura facturaGuardada = facturaRepository.save(factura);
+
+        facturaGuardada.setNumeroFactura(
+                String.format(
+                        "FAC-%06d",
+                        facturaGuardada.getId()
+                )
+        );
+
+        return facturaRepository.save(facturaGuardada);
+    }
+
+    // =========================
+    // GENERACIÓN MASIVA
+    // =========================
+
+    @Transactional
+    public void generarFacturasMasivas(String periodo) {
+
+        List<Lectura> lecturas = lecturaRepository
+                .findByPeriodo(periodo, Pageable.unpaged())
+                .getContent();
+
+        log.info("Lecturas encontradas: {}", lecturas.size());
+
+        Set<Long> lecturasConFactura = facturaRepository.findAll()
+                .stream()
+                .map(f -> f.getLectura() != null
+                        ? f.getLectura().getId()
+                        : null)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        List<CuotaFinanciacion> cuotasPendientes =
+                cuotaRepository.findByEstado("PENDIENTE");
+
+        if (cuotasPendientes == null) {
+            cuotasPendientes = List.of();
+        }
+
+        int creadas = 0;
+
         for (Lectura lectura : lecturas) {
-            // Evitar duplicados si ya existe factura para esta lectura
+
             if (lectura == null || lectura.getId() == null) {
-                log.warn("Lectura nula o sin id encontrada en periodo {}: se omite.", periodo);
                 continue;
             }
-            if (lecturaIdsConFactura.contains(lectura.getId())) {
-                log.debug("Ya existe factura para lecturaId={}", lectura.getId());
+
+            if (lecturasConFactura.contains(lectura.getId())) {
                 continue;
             }
 
             Factura factura = new Factura();
+
             factura.setLectura(lectura);
             factura.setFechaEmision(LocalDate.now());
             factura.setFechaVencimiento(LocalDate.now().plusDays(15));
             factura.setEstado("PENDIENTE");
+
             factura.setCargoFijo(CARGO_FIJO);
 
-            // Cálculo por consumo (defensivo si consumo es null)
-            BigDecimal consumo = lectura.getConsumoM3() != null ? lectura.getConsumoM3() : BigDecimal.ZERO;
+            BigDecimal consumo = lectura.getConsumoM3() != null
+                    ? lectura.getConsumoM3()
+                    : BigDecimal.ZERO;
+
             BigDecimal valorConsumo = consumo.multiply(VALOR_M3);
+
             factura.setValorConsumo(valorConsumo);
 
             BigDecimal otrosCobros = BigDecimal.ZERO;
-            
-            // Filtramos en memoria las cuotas que pertenecen al cliente de la lectura
-            if (lectura.getCliente() != null && lectura.getCliente().getId() != null) {
+
+            if (lectura.getCliente() != null) {
+
                 Long clienteId = lectura.getCliente().getId();
+
                 for (CuotaFinanciacion cuota : cuotasPendientes) {
-                    if (cuota != null && cuota.getFinanciacion() != null && cuota.getFinanciacion().getCliente() != null
-                            && clienteId.equals(cuota.getFinanciacion().getCliente().getId())) {
+
+                    if (cuota != null
+                            && cuota.getFinanciacion() != null
+                            && cuota.getFinanciacion().getCliente() != null
+                            && clienteId.equals(
+                            cuota.getFinanciacion().getCliente().getId())) {
+
                         if (cuota.getValor() != null) {
                             otrosCobros = otrosCobros.add(cuota.getValor());
                         }
-                        // En un sistema real, aquí marcaríamos la cuota como "PROCESADA_EN_FACTURA"
                     }
                 }
-            } else {
-                log.warn("Lectura id={} no tiene cliente asociado, no se suman cuotas.", lectura.getId());
             }
-            
+
             factura.setOtrosCobros(otrosCobros);
 
-            // Total final
-            BigDecimal total = valorConsumo.add(CARGO_FIJO).add(otrosCobros);
-            factura.setTotalPagar(total);
+            factura.setTotalPagar(
+                    valorConsumo
+                            .add(CARGO_FIJO)
+                            .add(otrosCobros)
+            );
 
-            facturaRepository.save(factura);
-            log.info("Factura generada: lecturaId={} total={}", lectura.getId(), factura.getTotalPagar());
+            Factura facturaGuardada =
+                    facturaRepository.save(factura);
+
+            facturaGuardada.setNumeroFactura(
+                    String.format(
+                            "FAC-%06d",
+                            facturaGuardada.getId()
+                    )
+            );
+
+            facturaRepository.save(facturaGuardada);
+
+            creadas++;
         }
+
+        log.info("Facturas creadas: {}", creadas);
     }
 }

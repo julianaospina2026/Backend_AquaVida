@@ -7,11 +7,10 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/historial-lecturas")
-@CrossOrigin(origins = "*")
-public class HistorialLecturas {
+public class HistorialLecturasController {
     private final HistorialLecturasService service;
 
-    public HistorialLecturas(HistorialLecturasService service) {
+    public HistorialLecturasController(HistorialLecturasService service) {
         this.service = service;
     }
 

@@ -7,6 +7,9 @@ import jakarta.persistence.*;
 @Table(name = "usuarios_sistema")
 public class Usuario {
 
+    // =========================
+    // ID
+    // =========================
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -32,7 +35,6 @@ public class Usuario {
     @Column(nullable = false)
     private String nombreCompleto;
 
-    // 🔥 NUEVO: TELÉFONO
     @Column
     private String telefono;
 
@@ -55,11 +57,11 @@ public class Usuario {
     private Boolean activo = true;
 
     // =========================
-    // RELACIÓN CON CLIENTE 🔥
+    // CLIENTE (CORREGIDO)
     // =========================
-    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "cliente_id")
-    @JsonIgnoreProperties({"lecturas"})
+    @JsonIgnoreProperties({"lecturas", "usuarios"})
     private Cliente cliente;
 
     // =========================
@@ -110,7 +112,6 @@ public class Usuario {
         this.nombreCompleto = nombreCompleto;
     }
 
-    // 🔥 TELÉFONO
     public String getTelefono() {
         return telefono;
     }
@@ -135,7 +136,6 @@ public class Usuario {
         this.activo = activo;
     }
 
-    // 🔥 CLIENTE
     public Cliente getCliente() {
         return cliente;
     }

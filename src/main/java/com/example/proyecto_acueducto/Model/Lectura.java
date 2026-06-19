@@ -1,67 +1,65 @@
 package com.example.proyecto_acueducto.Model;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "lecturas")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Lectura {
 
+    // =========================
+    // ID
+    // =========================
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 🔵 RELACIÓN CON CLIENTE
-    @ManyToOne(fetch = FetchType.EAGER)
+    // =========================
+    // RELACIÓN CLIENTE
+    // =========================
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cliente_id", nullable = false)
-    @JsonIgnoreProperties({
-            "hibernateLazyInitializer",
-            "handler",
-            "lecturas"
-    })
+    @JsonIgnoreProperties({"lecturas", "hibernateLazyInitializer", "handler"})
     private Cliente cliente;
 
-    // 🔵 PERIODO (Ej: 2026-04)
-    @Column(nullable = false, length = 7)
+    // =========================
+    // DATOS DE LECTURA
+    // =========================
+    @Column(name = "periodo")
     private String periodo;
 
-    // 🔵 FECHA DE LECTURA
-    @Column(name = "fecha_lectura", nullable = false)
+    @Column(name = "fecha_lectura")
     private LocalDate fechaLectura;
 
-    // 🔵 LECTURA ANTERIOR
-    @Column(nullable = false, precision = 12, scale = 3)
+    @Column(name = "lectura_anterior", precision = 12, scale = 3)
     private BigDecimal lecturaAnterior;
 
-    // 🔵 LECTURA ACTUAL
-    @Column(nullable = false, precision = 12, scale = 3)
+    @Column(name = "lectura_actual", precision = 12, scale = 3)
     private BigDecimal lecturaActual;
 
-    // 🔵 CONSUMO EN M3
-    @Column(precision = 12, scale = 3)
+    @Column(name = "consumo_m3", precision = 12, scale = 3)
     private BigDecimal consumoM3;
 
-    // 🔵 OBSERVACIÓN
-    @Column(length = 255)
+    @Column(name = "observacion")
     private String observacion;
 
-    // 🔵 VALOR DE LA LECTURA
-    @Column(nullable = false, precision = 12, scale = 2)
+    @Column(name = "valor", precision = 12, scale = 2)
     private BigDecimal valor = BigDecimal.ZERO;
 
-    // 🔵 AUDITORÍA
-    @Column(nullable = false, updatable = false)
+    // =========================
+    // AUDITORÍA
+    // =========================
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     // =========================
-    // MÉTODOS DE CICLO DE VIDA
+    // CICLO DE VIDA
     // =========================
-
     @PrePersist
     protected void onCreate() {
 
@@ -71,24 +69,14 @@ public class Lectura {
             fechaLectura = LocalDate.now();
         }
 
-        calcularConsumo();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        calcularConsumo();
-    }
-
-    // =========================
-    // CÁLCULO DE CONSUMO
-    // =========================
-
-    private void calcularConsumo() {
-
+        // consumo
         if (lecturaActual != null && lecturaAnterior != null) {
             consumoM3 = lecturaActual.subtract(lecturaAnterior);
-        } else {
-            consumoM3 = BigDecimal.ZERO;
+        }
+
+        // valor (ejemplo tarifa fija)
+        if (consumoM3 != null) {
+            valor = consumoM3.multiply(new BigDecimal("2000"));
         }
     }
 
@@ -170,5 +158,9 @@ public class Lectura {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }

@@ -17,7 +17,9 @@ public class ProyectoAcueductoApplication {
         SpringApplication.run(ProyectoAcueductoApplication.class, args);
     }
 
-    // 🔵 CREAR ROLES
+    // =========================
+    // CREAR ROLES
+    // =========================
     @Bean
     CommandLineRunner cargarRoles(RolRepository rolRepository) {
         return args -> {
@@ -38,10 +40,13 @@ public class ProyectoAcueductoApplication {
         }
     }
 
-    // 🔴 CREAR USUARIOS DE PRUEBA
+    // =========================
+    // CREAR USUARIOS DE PRUEBA
+    // =========================
     @Bean
-    CommandLineRunner cargarUsuarios(UsuarioRepository usuarioRepository,
-        RolRepository rolRepository) {
+    CommandLineRunner cargarUsuarios(
+            UsuarioRepository usuarioRepository,
+            RolRepository rolRepository) {
 
         return args -> {
 
@@ -51,56 +56,58 @@ public class ProyectoAcueductoApplication {
             Rol usuarioRol = rolRepository.findByNombre("USUARIO").orElseThrow();
 
             // ADMIN
-            if (usuarioRepository.findByUsername("admin@gmail.com").isEmpty()) {
-                Usuario admin = new Usuario();
-                admin.setUsername("admin@gmail.com");
-                admin.setPassword("12345");
-                admin.setNombreCompleto("Administrador del sistema");
-                admin.setCedula("1001");
-                admin.setRol(adminRol);
-                admin.setActivo(true);
-
-                usuarioRepository.save(admin);
-            }
+            crearUsuarioSiNoExiste(usuarioRepository,
+                    "admin@gmail.com",
+                    "12345",
+                    "Administrador del sistema",
+                    "1001",
+                    adminRol);
 
             // OPERADOR
-            if (usuarioRepository.findByUsername("operador@gmail.com").isEmpty()) {
-                Usuario operador = new Usuario();
-                operador.setUsername("operador@gmail.com");
-                operador.setPassword("123456");
-                operador.setNombreCompleto("Operador del sistema");
-                operador.setCedula("1002");
-                operador.setRol(operadorRol);
-                operador.setActivo(true);
-
-                usuarioRepository.save(operador);
-            }
+            crearUsuarioSiNoExiste(usuarioRepository,
+                    "operador@gmail.com",
+                    "123456",
+                    "Operador del sistema",
+                    "1002",
+                    operadorRol);
 
             // PRESIDENTE
-            if (usuarioRepository.findByUsername("presidente@gmail.com").isEmpty()) {
-                Usuario presidente = new Usuario();
-                presidente.setUsername("presidente@gmail.com");
-                presidente.setPassword("1234567");
-                presidente.setNombreCompleto("Presidente del sistema");
-                presidente.setCedula("1003");
-                presidente.setRol(presidenteRol);
-                presidente.setActivo(true);
-
-                usuarioRepository.save(presidente);
-            }
+            crearUsuarioSiNoExiste(usuarioRepository,
+                    "presidente@gmail.com",
+                    "1234567",
+                    "Presidente del sistema",
+                    "1003",
+                    presidenteRol);
 
             // USUARIO NORMAL
-            if (usuarioRepository.findByUsername("usuario@gmail.com").isEmpty()) {
-                Usuario usuario = new Usuario();
-                usuario.setUsername("usuario@gmail.com");
-                usuario.setPassword("123");
-                usuario.setNombreCompleto("Usuario normal");
-                usuario.setCedula("10489527469");
-                usuario.setRol(usuarioRol);
-                usuario.setActivo(true);
-
-                usuarioRepository.save(usuario);
-            }
+            crearUsuarioSiNoExiste(usuarioRepository,
+                    "usuario@gmail.com",
+                    "123",
+                    "Usuario normal",
+                    "10489527469",
+                    usuarioRol);
         };
+    }
+
+    private void crearUsuarioSiNoExiste(
+            UsuarioRepository usuarioRepository,
+            String username,
+            String password,
+            String nombreCompleto,
+            String cedula,
+            Rol rol) {
+
+        if (usuarioRepository.findByUsername(username).isEmpty()) {
+
+            Usuario usuario = new Usuario();
+            usuario.setUsername(username);
+            usuario.setPassword(password);
+            usuario.setNombreCompleto(nombreCompleto);
+            usuario.setCedula(cedula);
+            usuario.setRol(rol);
+            usuario.setActivo(true);
+
+            usuarioRepository.save(usuario);
+        }
     }
 }

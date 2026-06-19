@@ -11,7 +11,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/presidente")
-@CrossOrigin(origins = "*")
 public class PresidenteController {
 
     private final PresidenteService presidenteService;
@@ -28,7 +27,9 @@ public class PresidenteController {
         this.pagoRepository = pagoRepository;
     }
 
-    // 📊 Dashboard principal
+    // =========================
+    // DASHBOARD
+    // =========================
     @GetMapping("/dashboard")
     public ResponseEntity<Map<String, Object>> getDashboard() {
         return ResponseEntity.ok(
@@ -36,7 +37,9 @@ public class PresidenteController {
         );
     }
 
-    // 💰 Todos los pagos
+    // =========================
+    // PAGOS
+    // =========================
     @GetMapping("/pagos")
     public ResponseEntity<?> getPagos() {
         return ResponseEntity.ok(
@@ -44,7 +47,9 @@ public class PresidenteController {
         );
     }
 
-    // 📊 Todas las lecturas
+    // =========================
+    // LECTURAS
+    // =========================
     @GetMapping("/lecturas")
     public ResponseEntity<?> getLecturas() {
         return ResponseEntity.ok(
@@ -52,17 +57,20 @@ public class PresidenteController {
         );
     }
 
-    // 📈 Historial de lecturas por cliente
+    // =========================
+    // HISTORIAL POR CLIENTE (FIX IMPORTANTE)
+    // =========================
     @GetMapping("/historial/{clienteId}")
-    public ResponseEntity<?> getHistorialCliente(
-            @PathVariable Long clienteId) {
+    public ResponseEntity<?> getHistorialCliente(@PathVariable Long clienteId) {
 
         return ResponseEntity.ok(
                 lecturaRepository.findByClienteId(clienteId)
         );
     }
 
-    // 🧪 Prueba de funcionamiento
+    // =========================
+    // SALUDO
+    // =========================
     @GetMapping("/saludo")
     public ResponseEntity<String> saludo() {
         return ResponseEntity.ok(

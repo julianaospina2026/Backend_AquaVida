@@ -12,11 +12,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.persistence.EntityNotFoundException;
+
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/lecturas")
-@CrossOrigin(origins = "*")
 public class LecturaController {
 
     private final LecturaService lecturaService;
@@ -26,63 +27,156 @@ public class LecturaController {
     }
 
     // ==========================
-    // 🔥 OBTENER LECTURAS POR CLIENTE
+    // OBTENER POR CLIENTE
     // ==========================
-    @GetMapping("/usuario/{clienteId}")
-    public ResponseEntity<List<Lectura>> obtenerPorUsuario(@PathVariable Long clienteId) {
-        List<Lectura> lista = lecturaService.obtenerPorCliente(clienteId);
-        return ResponseEntity.ok(lista);
+    @GetMapping("/cliente/{clienteId}")
+    public ResponseEntity<List<Lectura>> obtenerPorCliente(
+            @PathVariable Long clienteId) {
+
+        return ResponseEntity.ok(
+                lecturaService.obtenerPorCliente(clienteId)
+        );
     }
 
     // ==========================
-    // CREAR LECTURA
+    // REGISTRAR LECTURA
     // ==========================
     @PostMapping
-    public ResponseEntity<Lectura> registrar(@RequestBody Lectura lectura) {
-        Lectura nueva = lecturaService.guardar(lectura);
-        return ResponseEntity.status(HttpStatus.CREATED).body(nueva);
+    public ResponseEntity<?> registrar(@RequestBody Lectura lectura) {
+
+        try {
+
+            Lectura nuevaLectura = lecturaService.guardar(lectura);
+
+            return ResponseEntity
+                    .status(HttpStatus.CREATED)
+                    .body(nuevaLectura);
+
+        } catch (IllegalArgumentException e) {
+
+            e.printStackTrace();
+
+            return ResponseEntity
+                    .badRequest()
+                    .body(e.getMessage());
+
+        } catch (IllegalStateException e) {
+
+            e.printStackTrace();
+
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(e.getMessage());
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(
+                            "ERROR: "
+                                    + e.getClass().getName()
+                                    + " -> "
+                                    + e.getMessage()
+                    );
+        }
     }
 
     // ==========================
     // OBTENER POR ID
     // ==========================
     @GetMapping("/{id}")
-    public ResponseEntity<Lectura> obtenerPorId(@PathVariable Long id) {
+    public ResponseEntity<?> obtenerPorId(
+            @PathVariable Long id) {
+
         return lecturaService.buscarPorId(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+                .<ResponseEntity<?>>map(ResponseEntity::ok)
+                .orElse(
+                        ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                .body("Lectura no encontrada")
+                );
     }
 
     // ==========================
-    // LISTAR CON FILTROS
+    // LISTAR
     // ==========================
     @GetMapping
     public ResponseEntity<Page<Lectura>> listar(
-            @RequestParam(required = false) Long clienteId,
-            @RequestParam(required = false) String periodo,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "fechaLectura") String sort,
-            @RequestParam(defaultValue = "desc") String dir
+
+            @RequestParam(required = false)
+            Long clienteId,
+
+            @RequestParam(required = false)
+            String periodo,
+
+            @RequestParam(defaultValue = "0")
+            int page,
+
+            @RequestParam(defaultValue = "10")
+            int size,
+
+            @RequestParam(defaultValue = "fechaLectura")
+            String sort,
+
+            @RequestParam(defaultValue = "desc")
+            String dir
     ) {
 
-        Sort.Direction direction = dir.equalsIgnoreCase("asc")
-                ? Sort.Direction.ASC
-                : Sort.Direction.DESC;
+        Sort.Direction direction =
+                dir.equalsIgnoreCase("asc")
+                        ? Sort.Direction.ASC
+                        : Sort.Direction.DESC;
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sort));
+        Pageable pageable =
+                PageRequest.of(
+                        page,
+                        size,
+                        Sort.by(direction, sort)
+                );
 
-        Page<Lectura> resultado = lecturaService.listarConFiltros(clienteId, periodo, pageable);
-
-        return ResponseEntity.ok(resultado);
+        return ResponseEntity.ok(
+                lecturaService.listarConFiltros(
+                        clienteId,
+                        periodo,
+                        pageable
+                )
+        );
     }
 
     // ==========================
-    // ELIMINAR LECTURA
+    // ELIMINAR
     // ==========================
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> eliminar(@PathVariable Long id) {
-        lecturaService.eliminar(id);
-        return ResponseEntity.ok("Lectura eliminada correctamente");
+    public ResponseEntity<?> eliminar(
+            @PathVariable Long id) {
+
+        try {
+
+            lecturaService.eliminar(id);
+
+            return ResponseEntity.ok(
+                    "Lectura eliminada correctamente"
+            );
+
+        } catch (EntityNotFoundException e) {
+
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(e.getMessage());
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(
+                            "ERROR: "
+                                    + e.getClass().getName()
+                                    + " -> "
+                                    + e.getMessage()
+                    );
+        }
     }
 }

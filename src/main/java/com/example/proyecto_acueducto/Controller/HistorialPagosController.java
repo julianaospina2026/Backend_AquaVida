@@ -7,11 +7,10 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/historial-pagos")
-@CrossOrigin(origins = "*")
-public class HistorialPagos {
+public class HistorialPagosController {
     private final HistorialPagosService service;
 
-    public HistorialPagos(HistorialPagosService service) {
+    public HistorialPagosController(HistorialPagosService service) {
         this.service = service;
     }
 

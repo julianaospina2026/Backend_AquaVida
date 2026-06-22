@@ -39,9 +39,6 @@ public class LecturaService {
         this.facturaRepository = facturaRepository;
     }
 
-    // =========================
-    // GUARDAR LECTURA + FACTURA
-    // =========================
     @Transactional
     public Lectura guardar(Lectura lectura) {
 
@@ -56,7 +53,6 @@ public class LecturaService {
 
         Lectura lecturaGuardada = construirYGuardar(lectura, cliente, anterior);
 
-        // 🔥 IMPORTANTE: recargar desde BD para evitar estado sucio de Hibernate
         Lectura lecturaReal = lecturaRepository.findById(lecturaGuardada.getId())
                 .orElseThrow(() -> new EntityNotFoundException("Lectura no encontrada después de guardar"));
 
@@ -65,9 +61,6 @@ public class LecturaService {
         return lecturaGuardada;
     }
 
-    // =========================
-    // VALIDACIONES
-    // =========================
     private void validarDatos(Lectura lectura) {
 
         if (lectura.getCliente() == null || lectura.getCliente().getId() == null) {
@@ -89,9 +82,6 @@ public class LecturaService {
         }
     }
 
-    // =========================
-    // 🔥 ÚLTIMA LECTURA (CORREGIDO)
-    // =========================
     private BigDecimal obtenerUltimaLectura(Long clienteId) {
 
         return lecturaRepository
@@ -100,9 +90,6 @@ public class LecturaService {
                 .orElse(BigDecimal.ZERO);
     }
 
-    // =========================
-    // CONSTRUIR LECTURA
-    // =========================
     private Lectura construirYGuardar(Lectura lectura, Cliente cliente, BigDecimal anterior) {
 
         BigDecimal actual = lectura.getLecturaActual()
@@ -114,21 +101,23 @@ public class LecturaService {
 
         BigDecimal consumo = actual.subtract(anterior);
 
+        // 🔥 VALIDACIÓN NUEVA (EVITA FACTURAS EN 0)
+        if (consumo.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("No se permite consumo 0, no se genera lectura");
+        }
+
         lectura.setCliente(cliente);
         lectura.setLecturaAnterior(anterior);
         lectura.setLecturaActual(actual);
         lectura.setConsumoM3(consumo);
 
-        // 🔥 valor calculado aquí SOLO para persistencia
         lectura.setValor(consumo.multiply(PRECIO_M3));
 
         if (lectura.getFechaLectura() == null) {
             lectura.setFechaLectura(LocalDate.now());
         }
 
-        if (consumo.compareTo(BigDecimal.ZERO) == 0) {
-            lectura.setObservacion("Sin consumo");
-        } else if (consumo.compareTo(CONSUMO_ALTO) > 0) {
+        if (consumo.compareTo(CONSUMO_ALTO) > 0) {
             lectura.setObservacion("Consumo alto");
         } else {
             lectura.setObservacion("Consumo normal");
@@ -137,9 +126,6 @@ public class LecturaService {
         return lecturaRepository.save(lectura);
     }
 
-    // =========================
-    // 🔥 FACTURA CORREGIDA Y SEGURA
-    // =========================
     private void generarFactura(Lectura lectura) {
 
         System.out.println("🔥 GENERANDO FACTURA LECTURA ID: " + lectura.getId());
@@ -148,9 +134,14 @@ public class LecturaService {
             throw new RuntimeException("Datos inválidos para factura");
         }
 
-        // 🔥 RE-CALCULAR SIEMPRE (NO CONFIAR EN lectura.getValor())
         BigDecimal consumo = lectura.getLecturaActual()
                 .subtract(lectura.getLecturaAnterior());
+
+        // 🔥 VALIDACIÓN CLAVE: EVITAR FACTURAS EN 0
+        if (consumo.compareTo(BigDecimal.ZERO) <= 0) {
+            System.out.println("⚠ No se genera factura: consumo 0 o inválido");
+            return;
+        }
 
         BigDecimal valorConsumo = consumo.multiply(PRECIO_M3);
 
@@ -178,9 +169,6 @@ public class LecturaService {
         System.out.println("💾 FACTURA CREADA PARA LECTURA: " + lectura.getId());
     }
 
-    // =========================
-    // OTROS MÉTODOS
-    // =========================
     @Transactional(readOnly = true)
     public Optional<Lectura> buscarPorId(Long id) {
         return lecturaRepository.findById(id);

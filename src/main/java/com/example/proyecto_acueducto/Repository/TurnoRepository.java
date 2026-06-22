@@ -10,17 +10,24 @@ import java.util.List;
 @Repository
 public interface TurnoRepository extends JpaRepository<Turno, Long> {
 
-    // Turnos por estado
+    // =========================
+    // 📌 Turnos por estado
+    // =========================
     List<Turno> findByEstado(String estado);
 
-    // Turnos por cliente
+    // =========================
+    // 👤 Turnos por cliente
+    // =========================
     List<Turno> findByClienteId(Long clienteId);
 
-    // 📅 Turnos de mañana (SOLUCIÓN DEFINITIVA)
-    @Query(value = """
-        SELECT COUNT(*)
-        FROM turnos_mantenimiento
-        WHERE DATE(fecha_hora_programada) = DATE_ADD(CURDATE(), INTERVAL 1 DAY)
-    """, nativeQuery = true)
+    // =========================
+    // 📅 Turnos de mañana (CORRECTO Y COMPATIBLE)
+    // =========================
+    @Query(
+        value = "SELECT COUNT(*) " +
+                "FROM turnos_mantenimiento " +
+                "WHERE DATE(fecha_hora_programada) = DATE_ADD(CURDATE(), INTERVAL 1 DAY)",
+        nativeQuery = true
+    )
     long countTurnoManana();
 }

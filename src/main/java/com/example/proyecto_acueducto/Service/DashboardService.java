@@ -1,18 +1,31 @@
 package com.example.proyecto_acueducto.Service;
 
-import com.example.proyecto_acueducto.Repository.PagoRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.example.proyecto_acueducto.Repository.FacturaRepository;
+import com.example.proyecto_acueducto.Repository.PagoRepository;
+import com.example.proyecto_acueducto.Repository.TurnoRepository;
+import com.example.proyecto_acueducto.Repository.UsuarioRepository;
 
 @Service
 public class DashboardService {
 
     @Autowired
     private PagoRepository pagoRepository;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private FacturaRepository facturaRepository;
+
+    @Autowired
+    private TurnoRepository turnoRepository;
 
     // =====================================================
     // 📊 RESUMEN DEL DASHBOARD
@@ -24,9 +37,10 @@ public class DashboardService {
         try {
 
             // =========================
-            // 👥 USUARIOS (placeholder si no tienes repo)
+            // 👥 USUARIOS
             // =========================
-            resumen.put("users", 0);
+            long users = usuarioRepository.count();
+            resumen.put("users", users);
 
             // =========================
             // 💰 PAGOS HOY
@@ -38,22 +52,25 @@ public class DashboardService {
             );
 
             // =========================
-            // 📄 FACTURAS PENDIENTES (placeholder)
+            // 📄 FACTURAS PENDIENTES
             // =========================
-            resumen.put("pendingInvoices", 0);
+            long facturasPendientes =
+                    facturaRepository.countByEstado("PENDIENTE");
+
+            resumen.put("pendingInvoices", facturasPendientes);
 
             // =========================
-            // 📅 TURNOS MAÑANA (placeholder)
+            // 📅 TURNOS MAÑANA
             // =========================
-            resumen.put("tomorrowShifts", 0);
+            long turnosManana = turnoRepository.countTurnoManana();
+            resumen.put("tomorrowShifts", turnosManana);
 
         } catch (Exception e) {
 
-            // 🔥 IMPORTANTE: evita que el backend reviente (500)
             e.printStackTrace();
 
             resumen.put("users", 0);
-            resumen.put("paymentsToday", 0);
+            resumen.put("paymentsToday", BigDecimal.ZERO);
             resumen.put("pendingInvoices", 0);
             resumen.put("tomorrowShifts", 0);
         }
